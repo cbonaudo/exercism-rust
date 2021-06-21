@@ -1,65 +1,104 @@
 use std::iter::FromIterator;
 
+mod list_item;
+use list_item::ListItem;
+
 pub struct SimpleLinkedList<T> {
-    // Delete this field
-    // dummy is needed to avoid unused parameter error during compilation
-    dummy: ::std::marker::PhantomData<T>,
+    head: Option<Box<ListItem<T>>>,
 }
 
-impl<T> SimpleLinkedList<T> {
+impl<T: Clone> SimpleLinkedList<T> {
     pub fn new() -> Self {
-        unimplemented!()
+        Self { head: None }
     }
 
-    // You may be wondering why it's necessary to have is_empty()
-    // when it can easily be determined from len().
-    // It's good custom to have both because len() can be expensive for some types,
-    // whereas is_empty() is almost always cheap.
-    // (Also ask yourself whether len() is expensive for SimpleLinkedList)
     pub fn is_empty(&self) -> bool {
-        unimplemented!()
+        self.head.is_none()
     }
 
     pub fn len(&self) -> usize {
-        unimplemented!()
+        if let Some(head) = &self.head {
+            let mut list_item = &head.next;
+            let mut i = 1;
+
+            while let Some(next) = list_item {
+                list_item = &next.next;
+                i += 1;
+            }
+
+            return i;
+        } else {
+            return 0;
+        }
     }
 
-    pub fn push(&mut self, _element: T) {
-        unimplemented!()
+    pub fn push(&mut self, element: T) {
+        let item = ListItem::new(element);
+
+        if let Some(head) = self.head.as_mut() {
+            head.push(item);
+        } else {
+            self.head = Some(Box::new(item));
+        }
     }
 
     pub fn pop(&mut self) -> Option<T> {
-        unimplemented!()
+        if let Some(head_item) = self.head.as_mut() {
+            if head_item.next.is_some() {
+                head_item.pop()
+            } else {
+                let item = head_item.value.clone();
+                self.head = None;
+                Some(item)
+            }
+        } else {
+            None
+        }
     }
 
     pub fn peek(&self) -> Option<&T> {
-        unimplemented!()
+        if let Some(head_item) = self.head.as_ref() {
+            if head_item.next.is_some() {
+                head_item.peek()
+            } else {
+                Some(&head_item.value)
+            }
+        } else {
+            None
+        }
     }
 
     pub fn rev(self) -> SimpleLinkedList<T> {
-        unimplemented!()
+        let mut my_vec = Vec::new();
+
+        if let Some(head_item) = self.head.as_ref() {
+            head_item.add_values_recursive(&mut my_vec);
+        } 
+
+        my_vec.iter().rev().cloned().collect()
     }
 }
 
-impl<T> FromIterator<T> for SimpleLinkedList<T> {
-    fn from_iter<I: IntoIterator<Item = T>>(_iter: I) -> Self {
-        unimplemented!()
+impl<T: Clone> FromIterator<T> for SimpleLinkedList<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut ll = Self::new();
+
+        iter.into_iter().for_each(|item| ll.push(item));
+
+        ll
     }
 }
 
-// In general, it would be preferable to implement IntoIterator for SimpleLinkedList<T>
-// instead of implementing an explicit conversion to a vector. This is because, together,
-// FromIterator and IntoIterator enable conversion between arbitrary collections.
-// Given that implementation, converting to a vector is trivial:
-//
-// let vec: Vec<_> = simple_linked_list.into_iter().collect();
-//
-// The reason this exercise's API includes an explicit conversion to Vec<T> instead
-// of IntoIterator is that implementing that interface is fairly complicated, and
-// demands more of the student than we expect at this point in the track.
+impl<T: Clone> From<SimpleLinkedList<T>> for Vec<T> {
+    fn from(mut linked_list: SimpleLinkedList<T>) -> Vec<T> {
+        let mut vec = Vec::new();
 
-impl<T> From<SimpleLinkedList<T>> for Vec<T> {
-    fn from(mut _linked_list: SimpleLinkedList<T>) -> Vec<T> {
-        unimplemented!()
+        while !linked_list.is_empty() {
+            if let Some(item) = linked_list.pop() {
+                vec.push(item);
+            }
+        }
+        
+        vec.iter().rev().cloned().collect()
     }
 }
